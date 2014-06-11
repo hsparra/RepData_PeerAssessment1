@@ -2,7 +2,14 @@
 
 
 ## Loading and preprocessing the data
+```{r}
+data <- read.csv(unzip(activity.zip))
+```
 
+Remove the NA values
+```{r}
+noNA <- data[!is.na(data[,"steps"])]
+```
 
 
 ## What is mean total number of steps taken per day?
