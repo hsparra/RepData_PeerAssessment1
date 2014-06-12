@@ -5,13 +5,18 @@
 ```{r}
 #data <- read.csv(unzip("activity.zip"))
 data <- read.csv("activity.csv")
+data$day <- as.Date(data$date, "%Y-%m-%d")
+data$weekday <- weekdays(data$day)
+weekday.list <- unique(data$weekday)
+day.type <- c(rep("Weekday", 5), rep("Weekend", 2))
+data$dayType <- day.type[match(data$weekday, weekday.list)]
 ```
 
 Remove the NA values
 ```{r}
 data.noNA <- data[!is.na(data$steps),]
 # remove unused factors
-data.noNA$date <- factor(data.noNA$date)
+#data.noNA$date <- factor(data.noNA$date)
 ```
 
 
@@ -39,7 +44,22 @@ steps.by.daily.interval[steps.by.daily.interval$steps == max(steps.by.daily.inte
 ```
 
 ## Imputing missing values
+Total number of mission values in original data.
+```{r}
+sum(is.na(data$steps))
+```
 
+For simplicity replace missing values with the average daily number of steps. 
+For days with no step data at all use zero steps.
+```{r}
+all.nodata <- total.steps.by.day[is.na(total.steps.by.day)]
+data$steps[data$date %in% names(all.nodata)] <- 0
+```
+For days with some step data use the average number of steps for that day.
+```{r}
+#all.na.days <- 
+#data[is.na(data$steps),"steps"] <- 
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
