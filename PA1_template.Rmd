@@ -8,14 +8,19 @@ data <- read.csv(unzip(activity.zip))
 
 Remove the NA values
 ```{r}
-noNA <- data[!is.na(data[,"steps"])]
-mean.steps.per.day <- tapply(noNA$steps, noNA$date, mean)
-median.steps.per.day <- tapply(noNA$steps, noNA$date, median)
+data.noNA <- data[!is.na(data[,"steps"])]
+# remove unused factors
+data.noNA$date <- factor(data.noNA$date)
 ```
 
 
 ## What is mean total number of steps taken per day?
-
+Sum the steps for each day, then calculate the mean and median.
+```{r}
+total.steps.by.day <- tapply(data.noNA$steps, data.noNA$date, sum)
+mean(total.steps.by.day[!is.na(total.steps.by.day)])
+#total.steps.by.day.noNA <- total.steps.by.day[!is.na(total.steps.by.day)]
+```
 
 
 ## What is the average daily activity pattern?
