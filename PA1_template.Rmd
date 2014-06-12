@@ -3,12 +3,13 @@
 
 ## Loading and preprocessing the data
 ```{r}
-data <- read.csv(unzip(activity.zip))
+#data <- read.csv(unzip("activity.zip"))
+data <- read.csv("activity.csv")
 ```
 
 Remove the NA values
 ```{r}
-data.noNA <- data[!is.na(data[,"steps"])]
+data.noNA <- data[!is.na(data$steps),]
 # remove unused factors
 data.noNA$date <- factor(data.noNA$date)
 ```
@@ -18,14 +19,24 @@ data.noNA$date <- factor(data.noNA$date)
 Sum the steps for each day, then calculate the mean and median.
 ```{r}
 total.steps.by.day <- tapply(data.noNA$steps, data.noNA$date, sum)
+hist(total.steps.by.day, main="Histogram of Total Number of Steps per Day", xlab="")
 mean(total.steps.by.day[!is.na(total.steps.by.day)])
-#total.steps.by.day.noNA <- total.steps.by.day[!is.na(total.steps.by.day)]
 ```
 
 
 ## What is the average daily activity pattern?
-
-
+Take the average number of steps by the interval across days.
+```{r}
+steps.by.daily.interval <- aggregate(steps ~ interval, data.noNA, FUN="mean")
+with(steps.by.daily.interval, plot(interval, steps, type="l", 
+                                   main="Average Daily Activity Pattern", 
+                                   xlab="Interval (5 minute increment)",
+                                   ylab="Average Number of Steps"))
+```
+Interval with the maximum number of steps on average across the day.
+```{r}
+steps.by.daily.interval[steps.by.daily.interval$steps == max(steps.by.daily.interval$steps),1]
+```
 
 ## Imputing missing values
 
