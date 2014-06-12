@@ -3,6 +3,7 @@
 
 ## Loading and preprocessing the data
 ```{r}
+library(data.table)
 #data <- read.csv(unzip("activity.zip"))
 data <- read.csv("activity.csv")
 data$day <- as.Date(data$date, "%Y-%m-%d")
@@ -10,11 +11,13 @@ data$weekday <- weekdays(data$day)
 weekday.list <- unique(data$weekday)
 day.type <- c(rep("Weekday", 5), rep("Weekend", 2))
 data$dayType <- day.type[match(data$weekday, weekday.list)]
+dt <- data.table(data)
 ```
 
-Remove the NA values
+## Remove the NA values
 ```{r}
 data.noNA <- data[!is.na(data$steps),]
+dt.clean <- na.omit(dt)
 # remove unused factors
 #data.noNA$date <- factor(data.noNA$date)
 ```
@@ -23,34 +26,37 @@ data.noNA <- data[!is.na(data$steps),]
 ## What is mean total number of steps taken per day?
 Sum the steps for each day, then calculate the mean and median.
 ```{r}
-total.steps.by.day <- tapply(data.noNA$steps, data.noNA$date, sum)
-hist(total.steps.by.day, main="Histogram of Total Number of Steps per Day", xlab="")
-mean(total.steps.by.day[!is.na(total.steps.by.day)])
+#total.steps.by.day <- tapply(data.noNA$steps, data.noNA$date, sum)
+total.steps.by.day <- dt.clean[,sum(steps), by=date]
+hist(total.steps.by.day$V1, main="Histogram of Total Number of Steps per Day", xlab="")
+mean(total.steps.by.day$V1[!is.na(total.steps.by.day$V1)])
 ```
 
 
 ## What is the average daily activity pattern?
 Take the average number of steps by the interval across days.
 ```{r}
-steps.by.daily.interval <- aggregate(steps ~ interval, data.noNA, FUN="mean")
-with(steps.by.daily.interval, plot(interval, steps, type="l", 
+#steps.by.daily.interval <- aggregate(steps ~ interval, data.noNA, FUN="mean")
+steps.by.daily.interval <- dt.clean[,mean(steps), by=interval]
+with(steps.by.daily.interval, plot(interval, V1, type="l", 
                                    main="Average Daily Activity Pattern", 
                                    xlab="Interval (5 minute increment)",
                                    ylab="Average Number of Steps"))
 ```
+
 Interval with the maximum number of steps on average across the day.
 ```{r}
-steps.by.daily.interval[steps.by.daily.interval$steps == max(steps.by.daily.interval$steps),1]
+steps.by.daily.interval$interval[steps.by.daily.interval$V1 == max(steps.by.daily.interval$V1)]
 ```
 
 ## Imputing missing values
 Total number of mission values in original data.
 ```{r}
 sum(is.na(data$steps))
+sum(is.na(dt$steps))
 ```
 
-For simplicity replace missing values with the average daily number of steps. 
-For days with no step data at all use zero steps.
+For simplicity replace missing values with the average daily number of steps for that interval. 
 ```{r}
 all.nodata <- total.steps.by.day[is.na(total.steps.by.day)]
 data$steps[data$date %in% names(all.nodata)] <- 0
