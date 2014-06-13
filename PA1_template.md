@@ -5,7 +5,6 @@
 ```r
 options(scipen = 1, digits = 7)
 library(data.table)
-#data <- read.csv(unzip("activity.zip"))
 data <- read.csv("activity.csv")
 data$day <- as.Date(data$date, "%Y-%m-%d")
 data$weekday <- weekdays(data$day)
@@ -27,7 +26,6 @@ dt.clean <- na.omit(dt)
 Sum the steps for each day.
 
 ```r
-#total.steps.by.day <- tapply(data.noNA$steps, data.noNA$date, sum)
 total.steps.by.day <- dt.clean[,sum(steps), by=date]
 ```
 
@@ -63,7 +61,6 @@ median(total.steps.by.day$V1)
 Take the average number of steps by the interval across days.
 
 ```r
-#steps.by.daily.interval <- aggregate(steps ~ interval, data.noNA, FUN="mean")
 steps.by.daily.interval <- dt.clean[,mean(steps), by=interval]
 with(steps.by.daily.interval, plot(interval, V1, type="l", 
                                    main="Average Daily Activity Pattern", 
@@ -114,7 +111,7 @@ total.steps.2 <- dt.with.avg[,sum(steps), by=date]
 Histogram with the total number of steps taken per day
 
 ```r
-hist(total.steps.2$V1, main="Histogram of Total Number of Steps per Day with NAs Replaced with Avg for Interval", xlab="")
+hist(total.steps.2$V1, main="Total Number of Steps per Day by 5-Minute Interval (NAs Replaced)", xlab="")
 ```
 
 ![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
@@ -147,7 +144,7 @@ The median moved only slightly due to the addition of additional values since th
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-Split new data by weekday or weekend. Then Compute average steps per interval using new data. Identify if days are a weekday or a weekend.
+Convert the day type variable created above during the initial processing to a factor. Compute average steps per interval using new data then plot the data to compare weekdays with weekends.
 
 ```r
 dt.with.avg$dayType <- factor(dt.with.avg$dayType)
