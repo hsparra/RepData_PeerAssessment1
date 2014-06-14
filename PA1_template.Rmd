@@ -10,42 +10,41 @@ data$weekday <- weekdays(data$day)
 weekday.list <- unique(data$weekday)
 day.type <- c(rep("Weekday", 5), rep("Weekend", 2))
 data$dayType <- day.type[match(data$weekday, weekday.list)]
-dt <- data.table(data)
 ```
 
 ## Remove the NA values
 ```{r}
 data.noNA <- data[!is.na(data$steps),]
-dt.clean <- na.omit(dt)
 ```
 
 
 ## What is mean total number of steps taken per day?
 Sum the steps for each day.
 ```{r}
-total.steps.by.day <- dt.clean[,sum(steps), by=date]
+total.steps.by.day <- xtabs(steps ~ day, data=data.noNA)
 ```
 
 Create a histogram of the mean number of steps per day.
 ```{r}
-hist(total.steps.by.day$V1, main="Histogram of Total Number of Steps per Day", xlab="")
+hist(total.steps.by.day, main="Histogram of Total Number of Steps per Day", xlab="")
 ```
 
 Calculate the mean of the number of steps per day.
 ```{r}
-mean(total.steps.by.day$V1[!is.na(total.steps.by.day$V1)])
+mean(total.steps.by.day)
 ```
 
 Calculate the median of the number of steps per day.
 ```{r}
-median(total.steps.by.day$V1)
+median(as.vector(total.steps.by.day))
 ```
 
 ## What is the average daily activity pattern?
 Take the average number of steps by the interval across days.
 ```{r}
-steps.by.daily.interval <- dt.clean[,mean(steps), by=interval]
-with(steps.by.daily.interval, plot(interval, V1, type="l", 
+library(plyr)
+avgsteps <- ddply(data.noNA, .(interval), summarize, avg=mean(steps))
+with(avgsteps, plot(interval, avg, type="l", 
                                    main="Average Daily Activity Pattern", 
                                    xlab="Interval (5 minute increment)",
                                    ylab="Average Number of Steps"))
@@ -53,43 +52,42 @@ with(steps.by.daily.interval, plot(interval, V1, type="l",
 
 Interval with the maximum number of steps on average across the day.
 ```{r}
-steps.by.daily.interval$interval[steps.by.daily.interval$V1 == max(steps.by.daily.interval$V1)]
+avgsteps[avgsteps$avg == max(avgsteps$avg),"interval"]
 ```
 
 ## Imputing missing values
 Total number of mission values in original data.
 ```{r}
-sum(is.na(dt$steps))
+sum(is.na(data$steps))
 ```
 
 For simplicity replace missing values with the average daily number of steps for that interval.
 Round the average number of steps to a whole value since there are not partial steps.
 ```{r}
-dt.with.avg <- merge(dt, steps.by.daily.interval, by="interval")
-na.idx <- which(is.na(dt.with.avg$steps))
-dt.with.avg$steps[na.idx] <- round(dt.with.avg$V1[na.idx],0)
+nareplaced <- merge(data, avgsteps, by="interval")
+na.idx <- which(is.na(nareplaced$steps))
+nareplaced$steps[na.idx] <- round(nareplaced[na.idx,"avg"],0)
 ```
 
 
 Find the number of steps per day for new data set.
 ```{r}
-setkey(dt.with.avg, date, interval)
-total.steps.2 <- dt.with.avg[,sum(steps), by=date]
+intervalsteps <- ddply(nareplaced, .(day), summarize, steps=sum(steps))
 ```
 
 Histogram with the total number of steps taken per day
 ```{r}
-hist(total.steps.2$V1, main="Total Number of Steps per Day by 5-Minute Interval (NAs Replaced)", xlab="")
+hist(intervalsteps$steps, main="Total Number of Steps per Day by 5-Minute Interval (NAs Replaced)", xlab="")
 ```
 
 Calculate the mean of the number of steps per day.
 ```{r}
-mean(total.steps.2$V1)
+mean(intervalsteps$steps)
 ```
 
 Calculate the median of the number of steps per day.
 ```{r}
-median(total.steps.2$V1)
+median(intervalsteps$steps)
 ```
 
 ### Brief discussion of changes due to replacing NA values
@@ -102,8 +100,8 @@ The median moved only slightly due to the addition of additional values since th
 
 Convert the day type variable created above during the initial processing to a factor. Compute average steps per interval using new data then plot the data to compare weekdays with weekends.
 ```{r}
-dt.with.avg$dayType <- factor(dt.with.avg$dayType)
-interval.steps <- dt.with.avg[,mean(steps), by=c("interval","dayType")]
 library(ggplot2)
-ggplot(interval.steps, aes(interval, V1)) + geom_line() + xlab("Interval") + ylab("Number of steps") + facet_grid(dayType ~ .)
+nareplaced$dayType <- factor(nareplaced$dayType)
+intervalsteps <- aggregate(steps ~ interval + dayType, data=nareplaced, FUN=mean)
+ggplot(intervalsteps, aes(interval, steps)) + geom_line() + xlab("Interval") + ylab("Number of steps") + facet_grid(dayType ~ .)
 ```
